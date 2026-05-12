@@ -13,6 +13,9 @@
  *   format(value)  – converts the raw value to a display string;
  *                    receives `fund[col.key]` (may be null if not yet synced)
  *   width          – CSS column width (px string); used by Row.js and the header
+ *   getValue(fund) – (optional) extracts the raw value from a fund object;
+ *                    use when the value lives in a nested path (e.g. fund.returns['1y']).
+ *                    Callers: `col.getValue ? col.getValue(fund) : fund[col.key]`
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * HOW TO ADD A COLUMN
@@ -111,6 +114,7 @@ export const COLUMNS = [
     label:          '1W Return',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.returns?.['1w'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -119,6 +123,7 @@ export const COLUMNS = [
     label:          '1M Return',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.returns?.['1m'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -127,6 +132,7 @@ export const COLUMNS = [
     label:          '3M Return',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.returns?.['3m'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -135,6 +141,7 @@ export const COLUMNS = [
     label:          '6M Return',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.returns?.['6m'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -143,6 +150,7 @@ export const COLUMNS = [
     label:          '1Y Return',
     defaultVisible: true,
     sortable:       true,
+    getValue:       f => f.returns?.['1y'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -152,6 +160,7 @@ export const COLUMNS = [
     label:          '3Y CAGR',
     defaultVisible: true,
     sortable:       true,
+    getValue:       f => f.returns?.['3y'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -161,6 +170,7 @@ export const COLUMNS = [
     label:          '5Y CAGR',
     defaultVisible: true,
     sortable:       true,
+    getValue:       f => f.returns?.['5y'] ?? null,
     format:         fmt.pct,
     width:          '90px',
   },
@@ -171,6 +181,7 @@ export const COLUMNS = [
     label:          'Std Dev (1Y)',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.risk?.stdDev1y ?? null,
     format:         fmt.pct,
     width:          '100px',
   },
@@ -181,6 +192,7 @@ export const COLUMNS = [
     label:          'Sharpe (1Y)',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.risk?.sharpe1y ?? null,
     format:         fmt.num,
     width:          '100px',
   },
@@ -192,6 +204,7 @@ export const COLUMNS = [
     label:          'Max Drawdown',
     defaultVisible: false,
     sortable:       true,
+    getValue:       f => f.risk?.maxDrawdown ?? null,
     format:         fmt.pct,
     width:          '110px',
   },

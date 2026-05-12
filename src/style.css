@@ -287,13 +287,24 @@ body {
 .range-slider {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  padding: 4px 0;
+}
+/* Wrapper that gives the overlaid inputs room to render their thumbs */
+.range-slider__inputs {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 .range-slider__track {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 4px;
   background: var(--border);
   border-radius: 2px;
+  pointer-events: none;
 }
 .range-slider__fill {
   position: absolute;
@@ -303,8 +314,10 @@ body {
 }
 .range-slider input[type="range"] {
   position: absolute;
+  left: 0;
   width: 100%;
-  height: 4px;
+  height: 20px;
+  margin: 0;
   background: none;
   border: none;
   outline: none;
@@ -324,11 +337,22 @@ body {
   pointer-events: auto;
   cursor: pointer;
 }
+.range-slider input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--accent);
+  pointer-events: auto;
+  cursor: pointer;
+}
 .range-slider__labels {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .btn-reset-all {
@@ -367,6 +391,71 @@ body {
 @keyframes toast-slide-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Toolbar Internals ───────────────────────────────────────────────────── */
+
+.toolbar__brand {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  white-space: nowrap;
+  margin-right: 4px;
+}
+.toolbar__search {
+  flex: 0 0 200px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.toolbar__spacer { flex: 1; }
+.toolbar__result-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.toolbar__btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.toolbar__btn--icon {
+  padding: 5px 8px;
+  font-size: 16px;
+  border: none;
+  background: none;
+}
+.toolbar__btn--icon:hover { background: var(--bg); border-radius: 4px; }
+
+/* Column picker popover */
+.col-picker {
+  position: absolute;
+  top: calc(var(--header-h) + 4px);
+  right: 16px;
+  z-index: 300;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 12px;
+  min-width: 200px;
+  display: none;
+}
+.col-picker.open { display: block; }
+.col-picker__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.col-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
