@@ -11,7 +11,41 @@ import { createRow, updateRow, ROW_HEIGHT } from './Row.js';
  * @returns {{ refresh(): void, scrollToTop(): void, getViewportRowCount(): number,
  *             get onFundClick(): Function|null, set onFundClick(fn): void }}
  */
+const LS_COL_WIDTHS = 'navigator:col-widths';
+
 export function VirtualTable({ container }) {
+  // ── Column widths — persists in localStorage across page refreshes ─────────
+  const _defaults = Object.fromEntries(COLUMNS.map(c => [c.key, parseInt(c.width, 10)]));
+
+  // Load saved widths; fall back to defaults for any missing or invalid entry.
+  let _saved = null;
+  try { _saved = JSON.parse(localStorage.getItem(LS_COL_WIDTHS)); } catch {}
+  const _colWidths = { ..._defaults };
+  if (_saved && typeof _saved === 'object') {
+    for (const key of Object.keys(_defaults)) {
+      const v = _saved[key];
+      if (typeof v === 'number' && v >= 40) _colWidths[key] = v;
+    }
+  }
+
+  function _saveColWidths() {
+    try { localStorage.setItem(LS_COL_WIDTHS, JSON.stringify(_colWidths)); } catch {}
+  }
+
+  function _buildGridTemplate() {
+    const parts = ['36px'];
+    for (const col of COLUMNS) {
+      if (state.columnVisibility[col.key] !== false) {
+        parts.push(`${_colWidths[col.key]}px`);
+      }
+    }
+    return parts.join(' ');
+  }
+
+  function _applyGridTemplate() {
+    scroller.style.setProperty('--grid-cols', _buildGridTemplate());
+  }
+
   // ── DOM structure ────────────────────────────────────────────────────────
   const scroller = document.createElement('div');
   scroller.className = 'virtual-table';
@@ -28,6 +62,7 @@ export function VirtualTable({ container }) {
   scroller.appendChild(header);
   scroller.appendChild(spacer);
   container.appendChild(scroller);
+  _applyGridTemplate();
 
   // ── Row pool ──────────────────────────────────────────────────────────────
   const _pool = [];   // reusable row elements
@@ -86,7 +121,7 @@ export function VirtualTable({ container }) {
 
       const cell = document.createElement('span');
       cell.textContent = col.label;
-      cell.style.width = col.width;
+      cell.title       = col.label;
 
       if (col.sortable) {
         cell.setAttribute('data-sortable', 'true');
@@ -102,6 +137,33 @@ export function VirtualTable({ container }) {
         });
       }
 
+      // Resize handle — div (not span) so it is unaffected by the
+      // `.virtual-table__header span` rule which would override position:absolute.
+      const handle = document.createElement('div');
+      handle.className = 'col-resize-handle';
+      handle.setAttribute('aria-hidden', 'true');
+      handle.addEventListener('click', e => e.stopPropagation());
+      handle.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const startX = e.clientX;
+        const startW = _colWidths[col.key];
+        const key    = col.key;
+        function onMove(ev) {
+          const newW = Math.max(60, startW + ev.clientX - startX);
+          _colWidths[key] = newW;
+          _applyGridTemplate();
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          _saveColWidths();
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      cell.appendChild(handle);
+
       header.appendChild(cell);
     }
   }
@@ -114,13 +176,22 @@ export function VirtualTable({ container }) {
   // ── Events ────────────────────────────────────────────────────────────────
   scroller.addEventListener('scroll', _render, { passive: true });
 
-  scroller.addEventListener('click', e => {
+  function _openRowAtEvent(e) {
     if (!_onFundClick) return;
     const row = e.target.closest('.fund-row');
     if (!row) return;
     const idx = parseInt(row.dataset.idx, 10);
     if (!isNaN(idx) && idx < state.filtered.length) {
       _onFundClick(state.filtered[idx]);
+    }
+  }
+
+  scroller.addEventListener('click', _openRowAtEvent);
+
+  scroller.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      _openRowAtEvent(e);
     }
   });
 
@@ -160,7 +231,7 @@ export function VirtualTable({ container }) {
       btn.className   = 'toolbar__btn';
       btn.onclick     = () => {
         // Imported lazily to avoid circular dep; FilterPanel exposes resetAll globally
-        window.__mutualLensResetFilters?.();
+        window.__navigatorResetFilters?.();
       };
       el.appendChild(btn);
     }
@@ -173,6 +244,7 @@ export function VirtualTable({ container }) {
     set onFundClick(fn) { _onFundClick = fn; },
 
     refresh() {
+      _applyGridTemplate();
       _buildHeader();
       _updateEmptyState();
       if (state.filtered.length > 0) {

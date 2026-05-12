@@ -14,7 +14,8 @@ import { putSyncMeta }        from '../../db/db.js';
  * @param {Function} opts.onExportJSON         - called by export JSON button
  * @param {Function} opts.onColumnPickerToggle - called when column picker button is clicked
  * @param {Function} opts.onFiltersChange      - called after search changes (caller runs applyFilters + refresh)
- * @returns {{ updateResultCount(n): void, exportCSV(): void, exportJSON(): void }}
+ * @returns {{ updateResultCount(n): void, exportCSV(): void, exportJSON(): void,
+ *             showFreshnessWarning(syncedAt: string): void }}
  */
 export function Toolbar({
   container,
@@ -27,8 +28,13 @@ export function Toolbar({
   // ── Brand ─────────────────────────────────────────────────────────────────
   const brand = document.createElement('span');
   brand.className   = 'toolbar__brand';
-  brand.textContent = 'MutualLens';
+  brand.textContent = 'NAVigator';
   container.appendChild(brand);
+
+  const byline = document.createElement('span');
+  byline.className   = 'toolbar__byline';
+  byline.textContent = 'by Santhosh Ram V';
+  container.appendChild(byline);
 
   // ── Search input ──────────────────────────────────────────────────────────
   const searchInput = document.createElement('input');
@@ -139,6 +145,64 @@ export function Toolbar({
   themeBtn.addEventListener('click', () => toggleTheme());
   container.appendChild(themeBtn);
 
+  // ── About button + popover ────────────────────────────────────────────────
+  const aboutBtn = document.createElement('button');
+  aboutBtn.textContent = 'ℹ';
+  aboutBtn.className   = 'toolbar__btn--icon';
+  aboutBtn.setAttribute('aria-label', 'About NAVigator — data sources and version info');
+  aboutBtn.setAttribute('aria-haspopup', 'true');
+  aboutBtn.setAttribute('aria-expanded', 'false');
+  container.appendChild(aboutBtn);
+
+  const aboutPopover = document.createElement('div');
+  aboutPopover.className = 'about-popover';
+  aboutPopover.innerHTML = `
+    <div class="about-popover__title">About NAVigator</div>
+    <div class="about-popover__section">
+      <strong>Data Sources</strong>
+      <ul>
+        <li><a href="https://www.amfiindia.com/spages/NAVAll.txt" target="_blank" rel="noopener noreferrer">AMFI NAVAll.txt</a> — Fund list &amp; latest NAV</li>
+        <li><a href="https://api.mfapi.in/mf" target="_blank" rel="noopener noreferrer">MFAPI India</a> — 5Y NAV history &amp; metrics</li>
+      </ul>
+    </div>
+    <div class="about-popover__section">
+      <strong>App</strong>
+      <ul>
+        <li>Version: 0.1.0</li>
+        <li>DB Version: 1</li>
+      </ul>
+    </div>
+  `;
+  document.body.appendChild(aboutPopover);
+
+  aboutBtn.addEventListener('click', () => {
+    aboutPopover.classList.toggle('open');
+    aboutBtn.setAttribute('aria-expanded', aboutPopover.classList.contains('open'));
+  });
+  document.addEventListener('click', e => {
+    if (!aboutPopover.contains(e.target) && e.target !== aboutBtn) {
+      aboutPopover.classList.remove('open');
+      aboutBtn.setAttribute('aria-expanded', 'false');
+    }
+  }, { capture: true });
+
+  // ── Freshness banner (last child inside toolbar, wraps to second row) ────
+  const freshnessBanner = document.createElement('div');
+  freshnessBanner.className = 'freshness-banner';
+  freshnessBanner.hidden = true;
+  container.appendChild(freshnessBanner);
+
+  // ── Freshness helpers ─────────────────────────────────────────────────────
+  function _relativeTime(isoStr) {
+    const h = Math.floor((Date.now() - new Date(isoStr).getTime()) / 3_600_000);
+    if (h < 1)  return 'less than an hour ago';
+    if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d} day${d === 1 ? '' : 's'} ago`;
+    const mo = Math.floor(d / 30);
+    return `${mo} month${mo === 1 ? '' : 's'} ago`;
+  }
+
   // ── Export helpers ────────────────────────────────────────────────────────
   const _visibleCols = () =>
     COLUMNS.filter(c => state.columnVisibility[c.key] !== false);
@@ -174,7 +238,7 @@ export function Toolbar({
     const csv  = BOM + rows.join('\r\n');
     _triggerDownload(
       new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-      `mutual-lens-${_dateTag()}.csv`
+      `navigator-${_dateTag()}.csv`
     );
     onExportCSV?.();
   }
@@ -191,7 +255,7 @@ export function Toolbar({
     );
     _triggerDownload(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `mutual-lens-${_dateTag()}.json`
+      `navigator-${_dateTag()}.json`
     );
     onExportJSON?.();
   }
@@ -201,6 +265,18 @@ export function Toolbar({
     updateResultCount(n) {
       resultCount.textContent = `${n.toLocaleString()} fund${n === 1 ? '' : 's'}`;
     },
+
+    /** Show yellow banner if data is older than 24 hours. */
+    showFreshnessWarning(syncedAt) {
+      if (!syncedAt) return;
+      const ageMs = Date.now() - new Date(syncedAt).getTime();
+      if (ageMs > 24 * 3_600_000) {
+        freshnessBanner.textContent =
+          `Data last updated ${_relativeTime(syncedAt)} — consider Quick Sync`;
+        freshnessBanner.hidden = false;
+      }
+    },
+
     exportCSV:  _exportCSV,
     exportJSON: _exportJSON,
     /** Expose the search reset so FilterPanel's "Reset All" can clear the search input too. */

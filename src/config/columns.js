@@ -1,5 +1,5 @@
 /**
- * COLUMN DEFINITIONS — MutualLens
+ * COLUMN DEFINITIONS — NAVigator
  * ─────────────────────────────────────────────────────────────────────────────
  * Each object in this array defines one column in the fund table.
  *
@@ -58,7 +58,7 @@ export const COLUMNS = [
     defaultVisible: false,   // AMFI scheme code — useful for lookups, not default view
     sortable:       true,
     format:         fmt.code,
-    width:          '80px',
+    width:          '120px',
   },
   {
     key:            'schemeName',
@@ -66,7 +66,7 @@ export const COLUMNS = [
     defaultVisible: true,
     sortable:       true,
     format:         fmt.str,
-    width:          '280px',
+    width:          '320px',
   },
   {
     key:            'amcName',
@@ -74,7 +74,7 @@ export const COLUMNS = [
     defaultVisible: true,
     sortable:       true,
     format:         fmt.str,
-    width:          '160px',
+    width:          '200px',
   },
   {
     key:            'category',
@@ -82,7 +82,7 @@ export const COLUMNS = [
     defaultVisible: true,
     sortable:       true,
     format:         fmt.str,
-    width:          '100px',
+    width:          '120px',
   },
   {
     key:            'subCategory',
@@ -90,7 +90,7 @@ export const COLUMNS = [
     defaultVisible: true,
     sortable:       true,
     format:         fmt.str,
-    width:          '140px',
+    width:          '120px',
   },
   {
     key:            'navCurrent',
@@ -98,7 +98,7 @@ export const COLUMNS = [
     defaultVisible: true,
     sortable:       true,
     format:         fmt.nav,
-    width:          '90px',
+    width:          '120px',
   },
   {
     key:            'navDate',
@@ -106,7 +106,7 @@ export const COLUMNS = [
     defaultVisible: false,   // clutters the default view; available via column picker
     sortable:       true,
     format:         fmt.date,
-    width:          '90px',
+    width:          '120px',
   },
   {
     // Short-term noise — useful for detecting sudden events; off by default
@@ -116,7 +116,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['1w'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     key:            'return1m',
@@ -125,7 +125,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['1m'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     key:            'return3m',
@@ -134,7 +134,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['3m'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     key:            'return6m',
@@ -143,7 +143,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['6m'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     key:            'return1y',
@@ -152,7 +152,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['1y'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     // Compound Annual Growth Rate over 3 years — requires Full Sync
@@ -162,7 +162,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['3y'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     // Compound Annual Growth Rate over 5 years — requires Full Sync
@@ -172,7 +172,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.returns?.['5y'] ?? null,
     format:         fmt.pct,
-    width:          '90px',
+    width:          '120px',
   },
   {
     // Annualised std dev of daily log returns over 252 trading days.
@@ -183,7 +183,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.risk?.stdDev1y ?? null,
     format:         fmt.pct,
-    width:          '100px',
+    width:          '120px',
   },
   {
     // Sharpe = (1Y return − 6.5% risk-free rate) / Std Dev 1Y.
@@ -194,7 +194,7 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.risk?.sharpe1y ?? null,
     format:         fmt.num,
-    width:          '100px',
+    width:          '120px',
   },
   {
     // Worst peak-to-trough decline over full available history.
@@ -206,6 +206,6 @@ export const COLUMNS = [
     sortable:       true,
     getValue:       f => f.risk?.maxDrawdown ?? null,
     format:         fmt.pct,
-    width:          '110px',
+    width:          '120px',
   },
 ];

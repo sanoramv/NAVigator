@@ -7,7 +7,7 @@
  * @param {Function} opts.onchange  - called immediately with selected string[]
  * @returns {{ setValue(string[]): void, reset(): void, setOptions(string[]): void }}
  */
-export function MultiCheck({ container, options, onchange }) {
+export function MultiCheck({ container, options, onchange, listMaxHeight }) {
   let _options  = options ?? [];
   let _selected = new Set();
 
@@ -21,6 +21,10 @@ export function MultiCheck({ container, options, onchange }) {
   wrapper.appendChild(selectAllBtn);
 
   const listEl = document.createElement('div');
+  if (listMaxHeight) {
+    listEl.style.maxHeight = listMaxHeight;
+    listEl.style.overflowY = 'auto';
+  }
   wrapper.appendChild(listEl);
   container.appendChild(wrapper);
 

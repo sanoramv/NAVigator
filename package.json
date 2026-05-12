@@ -1,7 +1,7 @@
 {
-  "name": "mutual-lens",
+  "name": "navigator",
   "version": "0.1.0",
-  "description": "Indian Mutual Fund Knowledge Base — local-first browser app",
+  "description": "NAVigator — browse and compare Indian Direct+Growth mutual funds, local-first",
   "type": "module",
   "scripts": {
     "dev": "vite",

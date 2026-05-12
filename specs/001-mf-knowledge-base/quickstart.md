@@ -67,13 +67,14 @@ Click any row to open the fund detail panel on the right:
 
 ## 4. Deploy to GitHub Pages
 
-**One-time setup**: Open `vite.config.js` and set `base` to match your GitHub repo name:
+**One-time setup**: Set the `VITE_BASE_PATH` env var to match your GitHub repo name, or edit the fallback directly in `vite.config.js`:
 
-```js
-// vite.config.js
-export default defineConfig({
-  base: '/mutual-lens/',  // ← change 'mutual-lens' to your repo name
-})
+```bash
+# Option A — env var (no file edit needed)
+VITE_BASE_PATH=/my-repo-name/ npm run deploy
+
+# Option B — edit the fallback in vite.config.js
+# Change '/mutual-lens/' to '/<your-repo-name>/'
 ```
 
 Then deploy:

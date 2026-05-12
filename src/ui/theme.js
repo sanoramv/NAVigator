@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'mutual-lens-theme';
+const STORAGE_KEY = 'navigator-theme';
 
 /** Read saved preference or system preference, apply to <html data-theme>. */
 export function initTheme() {

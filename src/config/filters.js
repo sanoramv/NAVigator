@@ -1,5 +1,5 @@
 /**
- * FILTER DEFINITIONS — MutualLens
+ * FILTER DEFINITIONS — NAVigator
  * ─────────────────────────────────────────────────────────────────────────────
  * Each object in this array defines one filter control in the sidebar panel.
  * FilterPanel (src/ui/filters/FilterPanel.js) reads this array at startup and

@@ -19,20 +19,20 @@ export function FilterPanel({ container, onFiltersChange }) {
 
   // ── Header ───────────────────────────────────────────────────────────────
   const header = document.createElement('div');
-  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+  header.className = 'filter-panel__header';
 
   const title = document.createElement('span');
+  title.className   = 'filter-panel__title';
   title.textContent = 'Filters';
-  title.style.cssText = 'font-weight:600;font-size:13px;';
 
   const collapseBtn = document.createElement('button');
+  collapseBtn.className = 'filter-panel__toggle toolbar__btn--icon';
   collapseBtn.textContent = '‹';
   collapseBtn.setAttribute('aria-label', 'Collapse filter panel');
-  collapseBtn.className = 'toolbar__btn--icon';
-  collapseBtn.style.fontSize = '18px';
   collapseBtn.addEventListener('click', () => {
-    container.classList.toggle('collapsed');
-    collapseBtn.textContent = container.classList.contains('collapsed') ? '›' : '‹';
+    const collapsed = container.classList.toggle('collapsed');
+    collapseBtn.textContent = collapsed ? '›' : '‹';
+    collapseBtn.setAttribute('aria-label', collapsed ? 'Expand filter panel' : 'Collapse filter panel');
   });
 
   header.appendChild(title);
@@ -80,9 +80,10 @@ export function FilterPanel({ container, onFiltersChange }) {
         : _dynamicOptions(filterDef.stateKey);
 
       const ctrl = MultiCheck({
-        container: ctrlWrap,
-        options:   opts,
-        onchange:  selected => {
+        container:     ctrlWrap,
+        options:       opts,
+        listMaxHeight: filterDef.options.length === 0 ? '200px' : undefined,
+        onchange:      selected => {
           setFilters({ [filterDef.stateKey]: selected });
           onFiltersChange?.();
         },

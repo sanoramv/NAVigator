@@ -16,6 +16,7 @@ export function createRow() {
   const row = document.createElement('div');
   row.className = 'fund-row';
   row.setAttribute('role', 'row');
+  row.setAttribute('tabindex', '0');
 
   // Star column — always first, not driven by COLUMNS
   const star = document.createElement('span');
@@ -29,7 +30,6 @@ export function createRow() {
   for (const col of COLUMNS) {
     const cell = document.createElement('span');
     cell.dataset.col = col.key;
-    cell.style.width = col.width;
     row.appendChild(cell);
   }
 
@@ -66,6 +66,7 @@ export function updateRow(rowEl, fund, index, columnVisibility) {
     const raw  = col.getValue ? col.getValue(fund) : (fund[col.key] ?? null);
     const text = col.format(raw);
     cell.textContent = text;
+    cell.title = text; // tooltip for truncated content
 
     // Apply colour class for return/drawdown columns
     if (RETURN_KEYS.has(col.key)) {

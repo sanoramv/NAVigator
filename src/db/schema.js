@@ -1,4 +1,4 @@
-export const DB_NAME = 'mutual-lens-db';
+export const DB_NAME = 'navigator-db';
 export const DB_VERSION = 1;
 
 export function upgrade(db) {

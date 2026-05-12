@@ -91,28 +91,31 @@ a:hover { text-decoration: underline; }
 
 body {
   display: grid;
-  /* Row 1: fixed-height toolbar; Row 2: fills remaining viewport */
-  grid-template-rows: var(--header-h) 1fr;
+  /* Row 1: toolbar; Row 2: main content; Row 3: footer */
+  grid-template-rows: auto 1fr auto;
   /* Col 1: filter sidebar; Col 2: table area */
   grid-template-columns: var(--filter-w) 1fr;
   grid-template-areas:
     "header  header"
-    "sidebar content";
+    "sidebar content"
+    "footer  footer";
   overflow: hidden;
 }
 
-/* Toolbar — sticky across full width */
+/* Toolbar — sticky across full width; flex-wrap lets freshness banner become a second row */
 #toolbar {
   grid-area: header;
   position: sticky;
   top: 0;
   z-index: 100;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 0 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  min-height: var(--header-h);
 }
 
 /* Filter panel — left sidebar, scrollable */
@@ -123,13 +126,40 @@ body {
   padding: 12px;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  transition: width var(--filter-t), padding var(--filter-t), opacity var(--filter-t);
+  transition: width var(--filter-t), padding var(--filter-t);
 }
+
+/* Collapsed: shrink to a 36px strip showing only the expand button.
+   pointer-events stays enabled so the button remains clickable. */
 #filter-panel.collapsed {
-  width: 0;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
+  width: 36px;
+  padding: 8px 4px;
+  overflow: hidden;
+}
+#filter-panel.collapsed .filter-panel__title,
+#filter-panel.collapsed .filter-section,
+#filter-panel.collapsed .btn-reset-all {
+  display: none;
+}
+#filter-panel.collapsed .filter-panel__header {
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+/* Header layout */
+.filter-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.filter-panel__title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.filter-panel__toggle {
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 /* Table area — fills remaining space, hosts the virtual scroll container */
@@ -191,7 +221,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--grid-cols);
   align-items: center;
   background: var(--surface);
   border-bottom: 2px solid var(--border);
@@ -203,8 +234,13 @@ body {
   user-select: none;
 }
 .virtual-table__header span {
+  position: relative;
   padding: 0 8px;
+  min-width: 0;
   cursor: default;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .virtual-table__header span[data-sortable="true"] {
   cursor: pointer;
@@ -213,13 +249,36 @@ body {
   color: var(--text);
 }
 
+/* Column resize handle — must be a <div> child of the header cell so the
+   `.virtual-table__header span` rule (which sets position:relative) does not
+   override position:absolute here. */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 2;
+  background: transparent;
+}
+.col-resize-handle:hover {
+  background: var(--accent);
+  opacity: 0.5;
+}
+.col-resize-handle:active {
+  background: var(--accent);
+  opacity: 0.8;
+}
+
 /* Individual fund row — absolutely positioned by VirtualTable.js */
 .fund-row {
   position: absolute;
   left: 0;
   right: 0;
   height: var(--row-h);
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--grid-cols);
   align-items: center;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
@@ -227,7 +286,7 @@ body {
 }
 .fund-row:hover { background: var(--bg); }
 .fund-row span {
-  flex-shrink: 0;
+  min-width: 0;
   padding: 0 8px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -400,6 +459,12 @@ body {
   font-size: 16px;
   color: var(--accent);
   white-space: nowrap;
+  margin-right: 2px;
+}
+.toolbar__byline {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
   margin-right: 4px;
 }
 .toolbar__search {
@@ -458,6 +523,49 @@ body {
   font-size: 13px;
 }
 
+/* About popover */
+.about-popover {
+  position: absolute;
+  top: calc(var(--header-h) + 4px);
+  right: 4px;
+  z-index: 300;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 12px 16px;
+  min-width: 260px;
+  display: none;
+}
+.about-popover.open { display: block; }
+.about-popover__title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.about-popover__section { margin-bottom: 10px; font-size: 13px; }
+.about-popover__section strong { display: block; margin-bottom: 4px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+.about-popover__section ul { margin: 0; padding-left: 16px; }
+.about-popover__section li { margin: 2px 0; }
+.about-popover__section a { color: var(--accent); }
+
+/* Freshness warning banner — wraps to a second row inside #toolbar */
+.freshness-banner {
+  flex-basis: 100%;
+  margin: 0 -16px;
+  padding: 5px 16px;
+  background: #fffbeb;
+  border-top: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12px;
+  text-align: center;
+}
+[data-theme="dark"] .freshness-banner {
+  background: #451a03;
+  border-top-color: #78350f;
+  color: #fcd34d;
+}
+
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar          { width: 6px; height: 6px; }
@@ -493,6 +601,115 @@ body {
   max-width: 340px;
   font-size: 14px;
 }
+
+/* ── Sync progress bar ────────────────────────────────────────────────────── */
+.sync-progress {
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  border: none;
+  background: var(--border);
+  accent-color: var(--accent);
+}
+.sync-progress::-webkit-progress-bar   { background: var(--border); border-radius: 3px; }
+.sync-progress::-webkit-progress-value { background: var(--accent);  border-radius: 3px; }
+.sync-progress::-moz-progress-bar      { background: var(--accent);  border-radius: 3px; }
+
+.sync-status {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+@keyframes navigator-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+.sync-status--active {
+  animation: navigator-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Site footer ─────────────────────────────────────────────────────────── */
+
+#site-footer {
+  grid-area: footer;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+#site-footer a {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Detail drawer inner layout ──────────────────────────────────────────── */
+
+.drawer__header       { margin-bottom: 16px; }
+.drawer__title-row    { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.drawer__name-wrap    { flex: 1; min-width: 0; }
+.drawer__amfi-link    { display: block; font-size: 14px; font-weight: 600; color: var(--accent);
+                        text-decoration: none; word-break: break-word; line-height: 1.3; }
+.drawer__amfi-link:hover { text-decoration: underline; }
+.drawer__code         { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.drawer__close        { flex-shrink: 0; background: none; border: none; cursor: pointer;
+                        font-size: 16px; color: var(--text-muted); padding: 2px 6px; line-height: 1; }
+.drawer__close:hover  { color: var(--text); }
+
+.drawer__star         { flex-shrink: 0; background: none; border: none; cursor: pointer;
+                        font-size: 20px; color: var(--text-muted); padding: 0 4px; line-height: 1; }
+.drawer__star--active { color: #f5a623; }
+.drawer__star:hover   { color: #f5a623; }
+
+.drawer__meta-row     { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.drawer__nav-badge    { font-size: 15px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.drawer__badges       { display: flex; flex-wrap: wrap; gap: 4px; }
+.drawer__badge        { display: inline-block; padding: 2px 8px; border-radius: 12px;
+                        font-size: 11px; font-weight: 600; background: var(--bg);
+                        border: 1px solid var(--border); color: var(--text-muted); }
+
+/* ── NAV chart ────────────────────────────────────────────────────────────── */
+
+.drawer__chart-wrap   { margin-bottom: 16px; }
+.nav-chart            { border: 1px solid var(--border); border-radius: 6px;
+                        overflow: hidden; background: var(--bg); }
+.nav-chart__btns      { display: flex; gap: 4px; padding: 6px 8px 2px; }
+.nav-chart__btn       { background: none; border: 1px solid var(--border); border-radius: 4px;
+                        padding: 2px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+                        color: var(--text-muted); }
+.nav-chart__btn:disabled       { opacity: 0.35; cursor: default; }
+.nav-chart__btn:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+.nav-chart__btn--active        { background: var(--accent); color: #fff; border-color: var(--accent); }
+.nav-chart__btn--active:hover  { background: var(--accent); }
+
+/* ── Metric tables ───────────────────────────────────────────────────────── */
+
+.drawer__metrics      { margin-bottom: 16px; }
+.metric-section       { margin-bottom: 12px; }
+.metric-section__title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                         letter-spacing: 0.06em; color: var(--text-muted); margin: 0 0 4px; }
+.metric-table         { width: 100%; border-collapse: collapse; font-size: 13px; }
+.metric-table th      { text-align: left; color: var(--text-muted); font-weight: 400;
+                        padding: 3px 0; width: 55%; }
+.metric-table td      { text-align: right; font-variant-numeric: tabular-nums;
+                        padding: 3px 0; font-weight: 600; }
+.metric--pos          { color: var(--green); }
+.metric--neg          { color: var(--red); }
+.metric--null         { color: var(--text-muted); font-weight: 400; font-size: 11px; }
+
+/* ── Drawer notes ─────────────────────────────────────────────────────────── */
+
+.drawer__notes-wrap   { margin-top: 4px; }
+.drawer__notes-label  { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+                        letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.drawer__notes        { width: 100%; box-sizing: border-box; resize: vertical; border-radius: 4px;
+                        border: 1px solid var(--border); background: var(--bg); color: var(--text);
+                        font-size: 13px; padding: 8px; font-family: inherit; line-height: 1.5; }
+.drawer__notes:focus  { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 
 /* ── Responsive — hide filter panel below 900px ──────────────────────────── */
 
