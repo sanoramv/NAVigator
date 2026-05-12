@@ -1,1 +1,417 @@
-/* Global styles — implemented in Phase 2 (T011) */
+/* ── CSS Custom Properties ───────────────────────────────────────────────── */
+
+:root {
+  /* Colours — light theme (default) */
+  --bg:         #f8f9fa;
+  --surface:    #ffffff;
+  --border:     #dee2e6;
+  --text:       #212529;
+  --text-muted: #6c757d;
+  --accent:     #1a56db;
+  --green:      #0f6b3a;
+  --red:        #b91c1c;
+
+  /* Layout */
+  --header-h: 56px;
+  --filter-w: 280px;
+  --drawer-w: 420px;
+  --row-h:    48px;
+
+  /* Transitions */
+  --filter-t: 220ms ease;
+  --drawer-t: 260ms ease;
+}
+
+[data-theme="dark"] {
+  --bg:         #0d1117;
+  --surface:    #161b22;
+  --border:     #30363d;
+  --text:       #e6edf3;
+  --text-muted: #7d8590;
+  --accent:     #4493f8;
+  --green:      #3fb950;
+  --red:        #f85149;
+}
+
+/* ── Reset & Base ────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+  font: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 10px;
+  transition: background 100ms;
+}
+button:hover { background: var(--bg); }
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input, select, textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* ── Layout Grid ─────────────────────────────────────────────────────────── */
+
+body {
+  display: grid;
+  /* Row 1: fixed-height toolbar; Row 2: fills remaining viewport */
+  grid-template-rows: var(--header-h) 1fr;
+  /* Col 1: filter sidebar; Col 2: table area */
+  grid-template-columns: var(--filter-w) 1fr;
+  grid-template-areas:
+    "header  header"
+    "sidebar content";
+  overflow: hidden;
+}
+
+/* Toolbar — sticky across full width */
+#toolbar {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Filter panel — left sidebar, scrollable */
+#filter-panel {
+  grid-area: sidebar;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transition: width var(--filter-t), padding var(--filter-t), opacity var(--filter-t);
+}
+#filter-panel.collapsed {
+  width: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Table area — fills remaining space, hosts the virtual scroll container */
+#table-area {
+  grid-area: content;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Detail drawer — fixed right, slides in from off-screen */
+#detail-drawer {
+  position: fixed;
+  top: var(--header-h);
+  right: calc(-1 * var(--drawer-w) - 1px); /* 1px extra avoids hairline on Safari */
+  width: var(--drawer-w);
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 200;
+  padding: 20px;
+  transition: right var(--drawer-t);
+}
+#detail-drawer.open {
+  right: 0;
+}
+
+/* Toast area — bottom-right stack */
+#toast-area {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;   /* clicks pass through gap between toasts */
+}
+
+/* ── Virtual Table ───────────────────────────────────────────────────────── */
+
+.virtual-table {
+  position: relative;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Invisible spacer that gives the scrollbar the correct total height */
+.virtual-table__spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+}
+
+.virtual-table__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.virtual-table__header span {
+  padding: 0 8px;
+  cursor: default;
+}
+.virtual-table__header span[data-sortable="true"] {
+  cursor: pointer;
+}
+.virtual-table__header span[data-sortable="true"]:hover {
+  color: var(--text);
+}
+
+/* Individual fund row — absolutely positioned by VirtualTable.js */
+.fund-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--row-h);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 80ms;
+}
+.fund-row:hover { background: var(--bg); }
+.fund-row span {
+  flex-shrink: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Return colouring — applied by Row.js; colour is NEVER the sole indicator
+   (Row.js also prepends +/− prefix) per constitution Principle V. */
+.return--positive { color: var(--green); }
+.return--negative { color: var(--red); }
+
+/* ── Filter Panel Internals ──────────────────────────────────────────────── */
+
+.filter-section {
+  margin-bottom: 20px;
+}
+.filter-section__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.filter-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.multicheck__select-all {
+  font-size: 11px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.multicheck__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 13px;
+}
+
+.range-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.range-slider__track {
+  position: relative;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+.range-slider__fill {
+  position: absolute;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.range-slider input[type="range"] {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: none;
+  border: none;
+  outline: none;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.range-slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--accent);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.range-slider__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.btn-reset-all {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-color: transparent;
+  background: transparent;
+}
+.btn-reset-all:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+
+.toast {
+  pointer-events: auto;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  max-width: 360px;
+  font-size: 13px;
+  animation: toast-slide-in 160ms ease;
+}
+.toast--info     { border-left: 4px solid var(--accent); }
+.toast--success  { border-left: 4px solid var(--green); }
+.toast--error    { border-left: 4px solid var(--red); }
+.toast--progress { border-left: 4px solid var(--text-muted); }
+
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Empty State ─────────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state__icon {
+  font-size: 56px;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.4;
+}
+.empty-state__heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.empty-state__body {
+  max-width: 340px;
+  font-size: 14px;
+}
+
+/* ── Responsive — hide filter panel below 900px ──────────────────────────── */
+
+@media (max-width: 900px) {
+  body {
+    grid-template-columns: 0 1fr;
+  }
+  #filter-panel {
+    display: none;
+  }
+}
